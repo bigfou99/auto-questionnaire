@@ -10,7 +10,9 @@ To use the JavaScript function provided, follow the steps below:
 
    - For Safari, go to `Preferences` > `Advanced` and check `Show Develop menu in menu bar`. Then, press `Option + Cmd + C`.
 
-3. Copy and paste the JavaScript code from the 'auto_questionnaire.js' file into the console.
+3. Copy and paste the JavaScript code from the 'auto_questionnaire.js'** file into the console.
+
+   - To open 'auto_questionnaire.js', right click file and select edit.
 
 4. Press `Enter`.
 
