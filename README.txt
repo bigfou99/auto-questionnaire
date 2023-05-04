@@ -14,7 +14,11 @@ To use the JavaScript function provided, follow the steps below:
 
    - To open 'auto_questionnaire.js', right click file and select edit.
 
-4. Press `Enter`.
+4. Fill the questionnaire
+
+   - Press `Enter` to fill all the questionnaire.
+
+   - Press `Space to fill questions seperately` to fill all the questionnaire.
 
 5. Fill out the questionnaire as usual.
 
