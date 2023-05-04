@@ -40,3 +40,52 @@ function selectFirstRadioInEachSet() {
         radioGroup[0].checked = true;
     });
 }
+
+(function() {
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.top = '0';
+    container.style.left = '50%';
+    container.style.transform = 'translateX(-50%)';
+    container.style.backgroundColor = 'white';
+    container.style.border = '1px solid #ccc';
+    container.style.borderRadius = '4px';
+    container.style.padding = '10px';
+    container.style.zIndex = '9999';
+    container.style.display = 'flex';
+    container.style.justifyContent = 'space-around';
+
+    const buttonStyles = `
+        background-color: #007bff;
+        border: none;
+        border-radius: 4px;
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
+        margin: 0 4px;
+        padding: 8px 12px;
+        text-align: center;
+        text-decoration: none;
+        user-select: none;
+    `;
+
+    const buttons = [
+        { title: 'Fill All (Enter)', key: 'Enter' },
+        { title: 'Fill Next (Space)', key: ' ' }
+    ];
+
+    buttons.forEach(buttonData => {
+        const button = document.createElement('button');
+        button.innerText = buttonData.title;
+        button.style.cssText = buttonStyles;
+        button.title = buttonData.title;
+        button.addEventListener('click', () => {
+            const event = new KeyboardEvent('keydown', { key: buttonData.key });
+            document.dispatchEvent(event);
+        });
+        container.appendChild(button);
+    });
+
+    document.body.appendChild(container);
+})();
+
