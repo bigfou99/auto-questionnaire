@@ -1,20 +1,39 @@
-document.addEventListener('keydown', function(event) {
-    if (event.key === ' ') {
-        selectedNext();
-        event.preventDefault();
-    } else if (event.key === 'Enter') {
-        selectFirstRadioInEachSet();
-        event.preventDefault();
-    }
-});
+let filledRadioIndex = -1;
+let radioBias = 0;
+let randomPercentage = 0;
+
+if(hasMultipleSets())
+    initAutoQuestionnaire();
+
+
+function initAutoQuestionnaire(){
+    document.addEventListener('keydown', function(event) {
+        if (event.key === ' ') {
+            selectedNext();
+            event.preventDefault();
+        } else if (event.key === 'Enter') {
+            selectRadioInEachSet();
+            event.preventDefault();
+        }
+    });
+
+    createUI();
+}
+
+function hasMultipleSets() {
+    const inputs = document.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+    const uniqueNames = new Set(Array.from(inputs).map(input => input.name));
+
+    return uniqueNames.size > 1;
+}
+
 
 function selectedNext() {
     const inputs = document.querySelectorAll('input[type="radio"], input[type="checkbox"]');
-    const focusedIndex = Array.from(inputs).findIndex(input => input === document.activeElement);
     let nextSetIndex = -1;
 
-    for (let i = focusedIndex + 1; i < inputs.length; i++) {
-        if (focusedIndex === -1 || inputs[i].name !== inputs[focusedIndex].name) {
+    for (let i = filledRadioIndex + 1; i < inputs.length; i++) {
+        if (filledRadioIndex === -1 || inputs[i].name !== inputs[filledRadioIndex].name) {
             nextSetIndex = i;
             break;
         }
@@ -26,22 +45,47 @@ function selectedNext() {
 
     if (inputs[nextSetIndex].type === 'radio') {
         const radiosInNextSet = document.getElementsByName(inputs[nextSetIndex].name);
-        radiosInNextSet[0].checked = true;
+        const selectedIndex = getSelectedIndex(radiosInNextSet);
+        
+        // Create and dispatch a MouseEvent to simulate a mouse click
+        const event = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+        });
+        radiosInNextSet[selectedIndex].dispatchEvent(event);
     }
+    filledRadioIndex = nextSetIndex;
     inputs[nextSetIndex].focus();
 }
 
-function selectFirstRadioInEachSet() {
+function selectRadioInEachSet() {
     const inputs = document.querySelectorAll('input[type="radio"]');
     const uniqueNames = new Set(Array.from(inputs).map(input => input.name));
 
     uniqueNames.forEach(name => {
         const radioGroup = document.getElementsByName(name);
-        radioGroup[0].checked = true;
+        const selectedIndex = getSelectedIndex(radioGroup);
+
+        // Create and dispatch a MouseEvent to simulate a mouse click
+        const event = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+        });
+        radioGroup[selectedIndex].dispatchEvent(event);
     });
 }
 
-(function() {
+function getSelectedIndex(radioGroup) {
+    if (Math.random() < (1 - randomPercentage / 100)) {
+        return radioBias === 1 ? Math.floor(radioGroup.length / 2) : radioBias === 2 ? radioGroup.length - 1 : 0;
+    } else {
+        return Math.floor(Math.random() * radioGroup.length);
+    }
+}
+
+function createUI() {
     const container = document.createElement('div');
     container.style.position = 'fixed';
     container.style.top = '0';
@@ -55,6 +99,16 @@ function selectFirstRadioInEachSet() {
     container.style.display = 'flex';
     container.style.justifyContent = 'space-around';
 
+    createButtons(container);
+    
+
+    container.appendChild(createBiasSlider());
+    container.appendChild(createRandomnessSlider());
+
+    document.body.appendChild(container);
+};
+
+function createButtons(container){
     const buttonStyles = `
         background-color: #007bff;
         border: none;
@@ -86,6 +140,83 @@ function selectFirstRadioInEachSet() {
         container.appendChild(button);
     });
 
-    document.body.appendChild(container);
-})();
+}
 
+function createBiasSlider(){
+    // Create a new div for the slider and its label
+    const sliderDiv = document.createElement('div');
+    sliderDiv.style.display = 'flex';
+    sliderDiv.style.flexDirection = 'column';
+    sliderDiv.style.alignItems = 'center';
+
+    // Create a slider label
+    const sliderLabel = document.createElement('label');
+    sliderLabel.innerHTML = 'Bias: <span id="bias-value">First</span>';
+    sliderLabel.style.fontSize = '14px';
+    sliderLabel.style.marginRight = '8px';
+
+    // Create a slider input
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = '0';
+    slider.max = '2';
+    slider.value = '0';
+    slider.step = '1';
+    slider.style.width = '150px';
+    slider.style.marginRight = '10px';
+    
+    // Update radioBias and label value when slider changes
+    slider.addEventListener('input', (event) => {
+        radioBias = parseInt(event.target.value);
+        var radioBiasTxt;
+        switch(radioBias){
+            case 0:
+                radioBiasTxt = "First";
+                break;
+            case 1:
+                radioBiasTxt = "Middle";
+                break;
+            case 2:
+                radioBiasTxt = "Last";
+                break;
+        }
+        document.getElementById('bias-value').textContent = radioBiasTxt;
+    });
+
+    // Add the slider label and input to the container
+    sliderDiv.appendChild(sliderLabel);
+    sliderDiv.appendChild(slider);
+
+    return sliderDiv;
+}
+
+function createRandomnessSlider() {
+    const sliderDiv = document.createElement('div');
+    sliderDiv.style.display = 'flex';
+    sliderDiv.style.flexDirection = 'column';
+    sliderDiv.style.alignItems = 'center';
+
+    const sliderLabel = document.createElement('label');
+    sliderLabel.innerHTML = 'Randomness: <span id="randomness-value">0%</span>';
+    sliderLabel.style.fontSize = '14px';
+    sliderLabel.style.marginRight = '8px';
+
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = '0';
+    slider.max = '100';
+    slider.value = '0';
+    slider.step = '1';
+    slider.style.width = '150px';
+    slider.style.marginRight = '10px';
+
+    slider.addEventListener('input', (event) => {
+        randomPercentage = parseInt(event.target.value);
+        document.getElementById('randomness-value').textContent = `${randomPercentage}%`;
+    });
+
+    sliderDiv.appendChild(sliderLabel);
+    sliderDiv.appendChild(slider);
+
+    return sliderDiv;
+}
