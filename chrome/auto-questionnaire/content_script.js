@@ -23,10 +23,10 @@ window.onload = function(){
         }
 
         function hasMultipleSets() {
-            const inputs = document.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+            const inputs = document.querySelectorAll('input[type="radio"]');
             const uniqueNames = new Set(Array.from(inputs).map(input => input.name));
 
-            return uniqueNames.size > 1;
+            return uniqueNames.size > 3;
         }
 
 
