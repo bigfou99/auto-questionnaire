@@ -1,10 +1,29 @@
 let filledRadioIndex = -1;
 let radioBias = 0;
 let randomPercentage = 0;
+let currentGoogleQuestionIndex = 0;
 
-if(hasMultipleSets())
+const radioGroups = document.querySelectorAll('[role="radiogroup"]');
+
+
+if(isGoogleFormsURL())
+    initGoogleFormsAutoQuestionnaire();
+else if(hasMultipleSets())
     initAutoQuestionnaire();
 
+function initGoogleFormsAutoQuestionnaire(){
+    document.addEventListener('keydown', function(event) {
+        if (event.key === ' ') {
+            selectedGoogleFormNext();
+            event.preventDefault();
+        } else if (event.key === 'Enter') {
+            selectGoogleFormRadioInEachSet();
+            event.preventDefault();
+        }
+    });
+
+    createUI();
+}
 
 function initAutoQuestionnaire(){
     document.addEventListener('keydown', function(event) {
@@ -26,7 +45,6 @@ function hasMultipleSets() {
 
     return uniqueNames.size > 3;
 }
-
 
 function selectedNext() {
     const inputs = document.querySelectorAll('input[type="radio"], input[type="checkbox"]');
@@ -85,13 +103,53 @@ function getSelectedIndex(radioGroup) {
     }
 }
 
+function isGoogleFormsURL() {
+    const currentURL = window.location.href;
+    const googleFormsURLPattern = /^https:\/\/docs\.google\.com\/forms\/(?:u\/\d\/|d\/)(?:e\/[\w-]+\/(?:viewform)|.+)$/;
+    
+    return googleFormsURLPattern.test(currentURL);
+}
+
+function selectedGoogleFormNext() {
+
+    const radioButtons = radioGroups[currentGoogleQuestionIndex].querySelectorAll('[role="radio"]');
+
+    if (radioButtons && radioButtons.length > 0) {
+        const selectedIndex = getSelectedIndex(radioButtons);
+        if(!(radioButtons[selectedIndex].getAttribute('aria-checked') && radioButtons[selectedIndex].getAttribute('aria-checked') == "true"))
+            radioButtons[selectedIndex].click();
+
+        radioButtons[selectedIndex].focus();
+    }
+    currentGoogleQuestionIndex++;
+    // If there are no more questions, return to top
+    if (currentGoogleQuestionIndex >= radioGroups.length) {
+        currentGoogleQuestionIndex = 0;
+    }
+    
+}
+
+function selectGoogleFormRadioInEachSet() {
+    radioGroups.forEach(group => {
+        const radioButtons = group.querySelectorAll('[role="radio"]');
+        if (radioButtons && radioButtons.length > 0) {
+            const selectedIndex = getSelectedIndex(radioButtons);
+            if(!(radioButtons[selectedIndex].getAttribute('aria-checked') && radioButtons[selectedIndex].getAttribute('aria-checked') == "true"))
+                radioButtons[selectedIndex].click();
+                
+            radioButtons[selectedIndex].focus();
+        }
+    });
+}
+
+
 function createUI() {
     const container = document.createElement('div');
     container.style.position = 'fixed';
     container.style.top = '0';
     container.style.left = '50%';
     container.style.transform = 'translateX(-50%)';
-    container.style.backgroundColor = 'white';
+    container.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
     container.style.border = '1px solid #ccc';
     container.style.borderRadius = '4px';
     container.style.padding = '10px';
@@ -100,10 +158,11 @@ function createUI() {
     container.style.justifyContent = 'space-around';
 
     createButtons(container);
-    
 
     container.appendChild(createBiasSlider());
     container.appendChild(createRandomnessSlider());
+
+    makeDraggable(container);
 
     document.body.appendChild(container);
 };
@@ -121,6 +180,7 @@ function createButtons(container){
         text-align: center;
         text-decoration: none;
         user-select: none;
+        opacity: 0.7;
     `;
 
     const buttons = [
@@ -219,4 +279,78 @@ function createRandomnessSlider() {
     sliderDiv.appendChild(slider);
 
     return sliderDiv;
+}
+
+function makeDraggable(container) {
+    let isMouseDown = false;
+    let initialMouseX, initialMouseY;
+    let initialContainerX, initialContainerY;
+    
+    const sliders = container.querySelectorAll('input[type="range"]');
+    
+    container.addEventListener('mousedown', (event) => {
+        if (event.target.tagName === 'INPUT' && event.target.type === 'range') {
+        return;
+        }
+    
+        isMouseDown = true;
+        initialMouseX = event.clientX;
+        initialMouseY = event.clientY;
+        initialContainerX = container.offsetLeft;
+        initialContainerY = container.offsetTop;
+    });
+    
+    document.addEventListener('mousemove', (event) => {
+        if (!isMouseDown) return;
+    
+        for (let slider of sliders) {
+        const rect = slider.getBoundingClientRect();
+        if (rect && typeof rect.contains === 'function' && rect.contains(event.target)) {
+            return;
+        }
+        }
+    
+        const deltaX = event.clientX - initialMouseX;
+        const deltaY = event.clientY - initialMouseY;
+    
+        const containerWidth = container.offsetWidth;
+        const containerHeight = container.offsetHeight;
+    
+        const minX = containerWidth/2;
+        const minY = 0;
+        const maxX = window.innerWidth - containerWidth/2;
+        const maxY = window.innerHeight - containerHeight;
+    
+        let newContainerX = initialContainerX + deltaX;
+        let newContainerY = initialContainerY + deltaY;
+    
+        newContainerX = Math.max(minX, Math.min(newContainerX, maxX));
+        newContainerY = Math.max(minY, Math.min(newContainerY, maxY));
+    
+        container.style.left = `${newContainerX}px`;
+        container.style.top = `${newContainerY}px`;
+    });
+    
+    document.addEventListener('mouseup', () => {
+        isMouseDown = false;
+    });
+    
+    window.addEventListener('resize', () => {
+        const containerWidth = container.offsetWidth;
+        const containerHeight = container.offsetHeight;
+    
+        const minX = 0;
+        const minY = 0;
+        const maxX = window.innerWidth - containerWidth;
+        const maxY = window.innerHeight - containerHeight;
+    
+        let newContainerX = parseInt(container.style.left, 10);
+        let newContainerY = parseInt(container.style.top, 10);
+    
+        newContainerX = Math.max(minX, Math.min(newContainerX, maxX));
+        newContainerY = Math.max(minY, Math.min(newContainerY, maxY));
+    
+        container.style.left = `${newContainerX}px`;
+        container.style.top = `${newContainerY}px`;
+    });
 }

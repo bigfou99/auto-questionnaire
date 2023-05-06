@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Auto Questionnaire",
-    "version": "1.0",
+    "version": "1.1",
     "description": "Automatically selects radio buttons with keyboard shortcuts.",
     "content_scripts": [
         {
