@@ -11,12 +11,12 @@ if(isGoogleFormsURL())
 else if(hasMultipleSets())
     initAutoQuestionnaire();
 
-function initGoogleFormsAutoQuestionnaire(){
-    document.addEventListener('keydown', function(event) {
-        if (event.key === ' ') {
+function initGoogleFormsAutoQuestionnaire() {
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
             selectedGoogleFormNext();
             event.preventDefault();
-        } else if (event.key === 'Enter') {
+        } else if (event.key === 'Enter' && event.shiftKey) {
             selectGoogleFormRadioInEachSet();
             event.preventDefault();
         }
@@ -25,12 +25,12 @@ function initGoogleFormsAutoQuestionnaire(){
     createUI();
 }
 
-function initAutoQuestionnaire(){
-    document.addEventListener('keydown', function(event) {
-        if (event.key === ' ') {
+function initAutoQuestionnaire() {
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
             selectedNext();
             event.preventDefault();
-        } else if (event.key === 'Enter') {
+        } else if (event.key === 'Enter' && event.shiftKey) {
             selectRadioInEachSet();
             event.preventDefault();
         }
@@ -96,10 +96,28 @@ function selectRadioInEachSet() {
 }
 
 function getSelectedIndex(radioGroup) {
-    if (Math.random() < (1 - randomPercentage / 100)) {
+    const randomFactor = (1 - randomPercentage / 100);
+    
+    if (Math.random() < randomFactor) {
         return radioBias === 1 ? Math.floor(radioGroup.length / 2) : radioBias === 2 ? radioGroup.length - 1 : 0;
     } else {
-        return Math.floor(Math.random() * radioGroup.length);
+        let selectedIndex;
+        
+        switch (radioBias) {
+            case 0: // Bias towards the first option
+                selectedIndex = Math.floor(Math.pow(Math.random(), 2) * radioGroup.length);
+                break;
+            case 1: // Bias towards the middle option
+                selectedIndex = Math.floor(radioGroup.length / 2 + (Math.random() - 0.5) * radioGroup.length);
+                break;
+            case 2: // Bias towards the last option
+                selectedIndex = radioGroup.length - 1 - Math.floor(Math.pow(Math.random(), 2) * radioGroup.length);
+                break;
+            default:
+                selectedIndex = Math.floor(Math.random() * radioGroup.length);
+        }
+        
+        return Math.min(Math.max(selectedIndex, 0), radioGroup.length - 1);
     }
 }
 
@@ -116,10 +134,12 @@ function selectedGoogleFormNext() {
 
     if (radioButtons && radioButtons.length > 0) {
         const selectedIndex = getSelectedIndex(radioButtons);
-        if(!(radioButtons[selectedIndex].getAttribute('aria-checked') && radioButtons[selectedIndex].getAttribute('aria-checked') == "true"))
+        console.log("buttons: " + radioGroups[currentGoogleQuestionIndex].getAttribute("innerText"));
+        console.log("areachecked: " + radioButtons[selectedIndex].getAttribute('aria-checked'));
+        if(!(radioButtons[selectedIndex].getAttribute('aria-checked') && radioButtons[selectedIndex].getAttribute('aria-checked') == "true")){
             radioButtons[selectedIndex].click();
-
-        radioButtons[selectedIndex].focus();
+            radioButtons[selectedIndex].focus();
+        }  
     }
     currentGoogleQuestionIndex++;
     // If there are no more questions, return to top
@@ -184,17 +204,17 @@ function createButtons(container){
     `;
 
     const buttons = [
-        { title: 'Fill All (Enter)', key: 'Enter' },
-        { title: 'Fill Next (Space)', key: ' ' }
+        { title: 'Fill All<br>(Shift + Enter)', key: 'Enter', shiftKey: true },
+        { title: 'Fill Next<br>(Enter)', key: 'Enter', shiftKey: false }
     ];
 
     buttons.forEach(buttonData => {
         const button = document.createElement('button');
-        button.innerText = buttonData.title;
+        button.innerHTML = buttonData.title;
         button.style.cssText = buttonStyles;
-        button.title = buttonData.title;
+        button.title = buttonData.title.replace('<br>', ' '); // Remove the line break from the tooltip text
         button.addEventListener('click', () => {
-            const event = new KeyboardEvent('keydown', { key: buttonData.key });
+            const event = new KeyboardEvent('keydown', { key: buttonData.key, shiftKey: buttonData.shiftKey });
             document.dispatchEvent(event);
         });
         container.appendChild(button);
